@@ -299,7 +299,7 @@ Version Constrained Dependencies
 
 .. code-block:: toml
 
-        aiohttp = { version = ">= 3.6.2 < 4.0.0" }
+        aiohttp = { version = ">= 3.6.2, < 4.0.0" }
 
 
 Direct Reference Dependencies
