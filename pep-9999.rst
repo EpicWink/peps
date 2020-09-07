@@ -302,6 +302,16 @@ Version Constrained Dependencies
         aiohttp = { version = ">= 3.6.2, < 4.0.0" }
 
 
+.. note::
+
+        This can, for conciseness, be also represented as a string.
+
+        .. code-block:: toml
+
+			aiohttp = ">= 3.6.2, < 4.0.0"
+
+
+
 Direct Reference Dependencies
 -----------------------------
 
