@@ -86,8 +86,6 @@ in :pep:`621`.
 
 .. _toml: https://toml.io/
 
-.. _dependencies-spec:
-
 dependencies
 ------------
 
@@ -104,6 +102,8 @@ values can have one of the following types:
 - array: an array of requirement tables.
 
 It is an error to specify an empty array ``[]`` or string ``''`` as a value.
+
+.. _requirement-spec:
 
 Requirement table
 ^^^^^^^^^^^^^^^^^
@@ -164,10 +164,16 @@ optional-dependencies
 
 Format: table
 
-The keys inside this table are the names of the project's :pep:`508` extras.
-The values each specify the list of requirements required by the extra, and are
-tables. These requirement lists are described with the same as
-`the dependencies specification <#dependencies-spec>`_ above.
+The keys inside this table are the names of an extra's required distribution.
+The values can have one of the following types:
+
+- table: a requirement table.
+
+- array: an array of requirement tables.
+
+These requirement tables have
+`the same specification as above <#requirement-spec>`_, with the addition of
+the environment marker key ``if-extra`` being required.
 
 
 Reference implementation
@@ -329,16 +335,11 @@ Rejected Ideas
   keys allows for increases in readability and ease of parsing for common
   cases, with no major drawbacks.
 
-
-Open Issues
-===========
-
-- Including a required ``for-extra`` key in extra requirements, which specifies
-  the extra for which the requirement is required for. This allows the
-  ``optional-dependencies`` table to be the same type as ``dependencies``
-  (table of requirements), and matches the ``if-extra`` environment marker. The
-  user then needs to specify the extra for each requirement, where typos can
-  cause a mis-specification of the project's extras.
+- Have the ``optional-dependencies`` be a table of dependency tables for each
+  extra, with the table name being the extra's name. This made
+  ``optional-dependencies`` a different type (table of tables of requirements)
+  from ``dependencies`` (table of requirements), which could be jarring for
+  users and harder to parse.
 
 
 Copyright
