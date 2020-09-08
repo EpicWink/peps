@@ -54,7 +54,8 @@ dependencies (environment markers will choose the appropriate dependency).
 
 The environment markers are modelled from `Poetry`_ and `Pipfile`_, and the
 ability to specify environment markers in keys was allowed due to the
-improved ease-of-use.
+improved ease-of-use. The decision to convert underscores ``_`` to hyphens
+``-`` was made to keep keys consistent with the rest of :pep:`621`.
 
 The direct-reference keys closely align with and utilise pep:`610` and
 :pep:`440` as to reduce differences in the packaging ecosystem and rely on
