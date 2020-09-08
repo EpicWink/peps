@@ -56,6 +56,8 @@ The environment markers are modelled from `Poetry`_ and `Pipfile`_, and the
 ability to specify environment markers in keys was allowed due to the
 improved ease-of-use. The decision to convert underscores ``_`` to hyphens
 ``-`` was made to keep keys consistent with the rest of :pep:`621`.
+They are prefixed with ``if-`` to distinguish them from other keys and make
+it more obvious that they control the "selection" of a requirement.
 
 The direct-reference keys closely align with and utilise pep:`610` and
 :pep:`440` as to reduce differences in the packaging ecosystem and rely on
@@ -143,7 +145,8 @@ Environment markers
 *******************
 
 All of the :pep:`508` environment marker variables are allowed as keys in the
-requirement table, with underscores ``_`` replace with hyphens ``-``. The
+requirement table, prefixed by ``if-`` and with underscores ``_`` replace with
+hyphens ``-``. The
 values are strings which consitute the remainder of the environment marker.
 
 As an example, for the environment marker ``python_version < "2.7"``, the
@@ -151,13 +154,10 @@ following is included in the requirement table:
 
 .. code-block:: toml
 
-    python-version = "< '2.7'"
+    if-python-version = "< '2.7'"
 
 All of these environment markers must be satisfied, in addition to the value of
 the ``markers`` key, for a requirement to be included.
-
-The ``extra`` marker must not be confused with the ``extras`` key defined
-above.
 
 optional-dependencies
 ---------------------
@@ -209,7 +209,7 @@ performed):
             "implementation_version",
             "extra",
         ):
-            key = variable.replace("_", "-")
+            key = "if-" + variable.replace("_", "-")
             if key in requirement:
                 if markers:
                     markers += " and "
@@ -253,13 +253,13 @@ Full example:
     [project.dependencies]
     flask = { }
     django = { }
-    requests = { version = ">= 2.8.1, == 2.8.*", extras = ["security", "tests"], python-version = "< '2.7'" }
+    requests = { version = ">= 2.8.1, == 2.8.*", extras = ["security", "tests"], if-python-version = "< '2.7'" }
     pip = { url = "https://github.com/pypa/pip/archive/1.3.1.zip" }
     sphinx = { git = "ssh://git@github.com/sphinx-doc/sphinx.git" }
     numpy = "~=1.18"
     pytest = [
-        { version = "<6", python-version = "< '3.5'" },
-        { version = ">=6", python-version = ">= '3.5'" },
+        { version = "<6", if-python-version = "< '3.5'" },
+        { version = ">=6", if-python-version = ">= '3.5'" },
     ]
 
 In homage to :pep:`631`, the following is an equivalent dependencies
@@ -280,12 +280,12 @@ specification for `docker-compose`_:
     websocket-client = ">= 0.32.0, < 1"
 
     # Conditional
-    "backports.shutil_get_terminal_size" = { version = "== 1.0.0", python-version = "< '3.3'" }
-    "backports.ssl_match_hostname" = { version = ">= 3.5, < 4", python-version = "< '3.5'" }
-    colorama = { version = ">= 0.4, < 1", sys-platform = "== 'win32'" }
-    enum34 = { version = ">= 1.0.4, < 2", python-version = "< '3.4'" }
-    ipaddress = { version = ">= 1.0.16, < 2", python-version = "< '3.3'" }
-    subprocess32 = { version = ">= 3.5.4, < 4", python-version = "< '3.2'" }
+    "backports.shutil_get_terminal_size" = { version = "== 1.0.0", if-python-version = "< '3.3'" }
+    "backports.ssl_match_hostname" = { version = ">= 3.5, < 4", if-python-version = "< '3.5'" }
+    colorama = { version = ">= 0.4, < 1", if-sys-platform = "== 'win32'" }
+    enum34 = { version = ">= 1.0.4, < 2", if-python-version = "< '3.4'" }
+    ipaddress = { version = ">= 1.0.16, < 2", if-python-version = "< '3.3'" }
+    subprocess32 = { version = ">= 3.5.4, < 4", if-python-version = "< '3.2'" }
 
     [project.optional-dependencies.socks]
     PySocks = { version = ">= 1.5.6, != 1.5.7, < 2" }
@@ -333,14 +333,10 @@ Rejected Ideas
 Open Issues
 ===========
 
-- Prefixing all environment-marker keys with ``if-``. This increases verbosity,
-  but makes environment-markers less likely to conflict with future keys and
-  better states the intention of these keys.
-
 - Including a required ``for-extra`` key in extra requirements, which specifies
   the extra for which the requirement is required for. This allows the
   ``optional-dependencies`` table to be the same type as ``dependencies``
-  (table of requirements), and matches the ``extra`` environment marker. The
+  (table of requirements), and matches the ``if-extra`` environment marker. The
   user then needs to specify the extra for each requirement, where typos can
   cause a mis-specification of the project's extras.
 
