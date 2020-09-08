@@ -216,7 +216,7 @@ performed):
                 markers_explicit = " and (" + markers_explicit + ")"
             markers += markers_explicit
         if markers:
-            pep508 += "; " + markers
+            pep508 += " ; " + markers
         return pep508
 
 
