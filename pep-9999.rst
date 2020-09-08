@@ -156,6 +156,9 @@ following is included in the requirement table:
 All of these environment markers must be satisfied, in addition to the value of
 the ``markers`` key, for a requirement to be included.
 
+The ``extra`` marker must not be confused with the ``extras`` key defined
+above.
+
 optional-dependencies
 ---------------------
 
