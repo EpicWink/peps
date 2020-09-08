@@ -293,13 +293,11 @@ specification for `docker-compose`_:
     ipaddress = { version = ">= 1.0.16, < 2", if-python-version = "< '3.3'" }
     subprocess32 = { version = ">= 3.5.4, < 4", if-python-version = "< '3.2'" }
 
-    [project.optional-dependencies.socks]
-    PySocks = { version = ">= 1.5.6, != 1.5.7, < 2" }
-
-    [project.optional-dependencies.tests]
-    ddt = { version = ">= 1.2.2, < 2" }
-    pytest = { version = "< 6" }
-    mock = { version = ">= 1.0.1, < 4", markers = "python_version < '3.4'" }
+    [project.optional-dependencies]
+    PySocks = { version = ">= 1.5.6, != 1.5.7, < 2", if-extra = "= 'socks' }
+    ddt = { version = ">= 1.2.2, < 2", if-extra = "= 'tests' }
+    pytest = { version = "< 6", if-extra = "= 'tests' }
+    mock = { version = ">= 1.0.1, < 4", markers = "python_version < '3.4'", if-extra = "= 'tests' }
 
 .. _docker-compose: https://github.com/docker/compose/blob/789bfb0e8b2e61f15f423d371508b698c64b057f/setup.py#L28-L61
 
