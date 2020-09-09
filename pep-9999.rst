@@ -174,8 +174,6 @@ in the table with name as the part to the left).
       - ``implementation.name``
     * - ``implementation_version``
       - ``implementation.version``
-    * - ``extra``
-      - ``extra``
 
 As an example, for the environment marker ``python_version < "2.7"``, the
 following is included in the requirement table:
@@ -187,8 +185,8 @@ following is included in the requirement table:
 All of these environment markers must be satisfied, in addition to the value of
 the ``markers`` key, for a requirement to be included.
 
-The ``extra`` marker must not be confused with the ``extras`` key defined
-above.
+Note that the ``extra`` marker is missing: this is only to be specified as
+``for-extra`` in ``optional-dependencies`` requirements.
 
 optional-dependencies
 ---------------------
@@ -255,8 +253,8 @@ performed):
         ):
             if key2 in requirement.get(key1, {}):
                 markers.append(variable + " " + requirement[key1][key2])
-        if "extra" in requirement:
-            markers.append(requirement["extra"])
+        if "for-extra" in requirement:
+            markers.append("extra = '" + requirement["for-extra"] + "'")
         if "markers" in requirement:
             markers_explicit = requirement["markers"]
             if markers:
