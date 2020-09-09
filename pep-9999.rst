@@ -300,6 +300,11 @@ Rejected Ideas
   with which the key-specified environment markers are ``and``'d with the
   result of. This was deferred as more design needs to be undertaken.
 
+- Replacing the `for-extra` key with `for-extras`, with the value being an
+  array of extras to makr the requirement a dependency for. This reduces some
+  duplication, but in this case that duplication makes explicit which extras
+  have which dependencies.
+
 
 Copyright
 =========
