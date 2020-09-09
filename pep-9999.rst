@@ -405,7 +405,7 @@ Complex Examples
 
 .. code-block:: toml
 
-        aiohttp = { version = ">= 3.6.2", extras = ["speedups"], for-extras = ["http"] }
+        aiohttp = { version = ">= 3.6.2", extras = ["speedups"], markers = "python_version >= '3.8'", for-extras = ["http"] }
 
 
 **Direct Reference (VCS)**
