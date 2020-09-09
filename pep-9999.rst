@@ -94,13 +94,13 @@ The keys inside this table are the names of the required distribution. The
 values can have one of the following types:
 
 - string: the requirement is defined only by a version requirement, with same
-  specification as ``version`` in the requirement table.
+  specification as ``version`` in the requirement table, except allowing the
+  empty string ``""`` to place no restriction on the version.
 
 - table: a requirement table.
 
-- array: an array of requirement tables.
-
-It is an error to specify an empty array ``[]`` or string ``''`` as a value.
+- array: an array of requirement tables. It is an error to specify an empty
+  array ``[]`` as a value.
 
 .. _requirement-spec:
 
@@ -294,17 +294,11 @@ Rejected Ideas
   from ``dependencies`` (table of requirements), which could be jarring for
   users and harder to parse.
 
-
-Open Issues
-===========
-
 - Making each :pep:`508` environment marker as a key (or child-table key) in
-  the requirement. This arguably increases readability and ease of parsing,
-  however the ability to have nested groups of ``and`` and ``or`` operations
-  on the markers is lost.
-
-  A solution to this is to still allow the ``markers`` key, with which the
-  key-specified environment markers and ``and``'d with the result of.
+  the requirement. This arguably increases readability and ease of parsing.
+  The ``markers`` key would still be allowed for more advanced specification,
+  with which the key-specified environment markers are ``and``'d with the
+  result of. This was deferred as more design needs to be undertaken.
 
 
 Copyright
