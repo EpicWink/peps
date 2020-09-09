@@ -335,7 +335,7 @@ Direct Reference Dependencies
 
 .. code-block:: toml
 
-        aiohttp = { vcs = "git", url = "git@github.com:aio-libs/aiohttp.git", revision = "master" }
+        aiohttp = { git = "git@github.com:aio-libs/aiohttp.git", revision = "master" }
 
 
 Environment Markers
@@ -348,7 +348,8 @@ Environment Markers
 
 .. code-block:: toml
 
-        aiohttp = { version = ">= 3.6.1", markers = "python_version >= '3.8'" }
+        aiohttp = { version = ">= 3.6.1", python-version = ">= '3.8'" }
+
 
 A silightly extended example of the above, where a particular version of ``aiohttp`` is required based on the interpreter version.
 
@@ -416,7 +417,7 @@ Complex Examples
 
 .. code-block:: toml
 
-        aiohttp = { vcs = "git", url = "git@github.com:aio-libs/aiohttp.git", revision = "master", extras = ["speedups"], for-extras = ["http"] }
+        aiohttp = { git = "git@github.com:aio-libs/aiohttp.git", revision = "master", extras = ["speedups"], markers = "python_version >= '3.8'", for-extras = ["http"] }
 
 
 Rejected Ideas
