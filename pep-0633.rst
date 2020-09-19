@@ -300,6 +300,39 @@ validation errors as users are building the dependencies list.
                     "markers": {
                         "title": "Dependency environment markers",
                         "type": "string"
+                    },
+                    "os-name": {
+                        "type": "string"
+                    },
+                    "sys-platform": {
+                        "type": "string"
+                    },
+                    "platform-machine": {
+                        "type": "string"
+                    },
+                    "platform-python-implementation": {
+                        "type": "string"
+                    },
+                    "platform-release": {
+                        "type": "string"
+                    },
+                    "platform-system": {
+                        "type": "string"
+                    },
+                    "platform-version": {
+                        "type": "string"
+                    },
+                    "python-version": {
+                        "type": "string"
+                    },
+                    "python-full-version": {
+                        "type": "string"
+                    },
+                    "implementation-name": {
+                        "type": "string"
+                    },
+                    "implementation-version": {
+                        "type": "string"
                     }
                 },
                 "oneOf": [
