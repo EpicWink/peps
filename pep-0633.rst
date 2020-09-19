@@ -150,7 +150,8 @@ in parsing.
 Environment markers
 *******************
 
-All of the :pep:`508` environment marker variables are allowed as keys in the
+All of the :pep:`508` environment marker variables (except ``extra``) are
+allowed as keys in the
 requirement table, with underscores ``_`` replace with hyphens ``-``. The
 values are strings which consitute the remainder of the environment marker.
 
@@ -225,7 +226,6 @@ performed):
             "python_full_version",
             "implementation_name",
             "implementation_version",
-            "extra",
         ):
             key = variable.replace("_", "-")
             if key in requirement:
