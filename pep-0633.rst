@@ -55,6 +55,11 @@ In the specification of multiple requirements with the same distribution name
 (where environment markers choose the appropriate dependency), the chosen
 solution is similar to `Poetry`_'s, where an array of requirements is allowed.
 
+The environment markers are modelled from `Poetry`_ and `Pipfile`_, and the
+ability to specify environment markers in keys was allowed due to the
+improved ease-of-use. The decision to convert underscores ``_`` to hyphens
+``-`` was made to keep keys consistent with the rest of :pep:`621`.
+
 The direct-reference keys closely align with and utilise pep:`610` and
 :pep:`440` as to reduce differences in the packaging ecosystem and rely on
 previous work in specification.
@@ -142,6 +147,27 @@ addition to the empty string ``""``.
 Any keys provided which are not specified in this document MUST cause an error
 in parsing.
 
+Environment markers
+*******************
+
+All of the :pep:`508` environment marker variables (except ``extra``) are
+allowed as keys in the
+requirement table, with underscores ``_`` replace with hyphens ``-``. The
+values are strings which consitute the remainder of the environment marker.
+
+As an example, for the environment marker ``python_version < "2.7"``, the
+following is included in the requirement table:
+
+.. code-block:: toml
+
+    python-version = "< '2.7'"
+
+All of these environment markers must be satisfied, in addition to the value of
+the ``markers`` key, for a requirement to be included.
+
+The ``extra`` keys must not be specified. See the ``for-extra`` key in the next
+section ``optional-dependencies``.
+
 ``optional-dependencies``
 --------------------------
 
@@ -186,14 +212,35 @@ performed):
                 pep508 += " @ " + vcs + "+" requirement[vcs]
                 if "revision" in requirement:
                     pep508 += "@" + revision
+
+        markers = []
+        for variable in (
+            "os_name",
+            "sys_platform",
+            "platform_machine",
+            "platform_python_implementation",
+            "platform_release",
+            "platform_system",
+            "platform_version",
+            "python_version",
+            "python_full_version",
+            "implementation_name",
+            "implementation_version",
+        ):
+            key = variable.replace("_", "-")
+            if key in requirement:
+                markers.append(variable + " " + requirement[key])
         extra = None
         if "for-extra" in requirement:
             extra = requirement["for-extra"]
+            markers.append("extra = '" + extra + "'")
         if "markers" in requirement:
-            markers = requirement["markers"]
-            if extra:
-                markers = "extra = '" + extra + "' and (" + markers + ")"
-            pep508 += "; " + markers
+            markers_explicit = requirement["markers"]
+            if markers:
+                markers_explicit = "(" + markers_explicit + ")"
+            markers.append(markers_explicit)
+        if markers:
+            pep508 += " ; " + " and ".join(markers)
         return pep508, extra
 
 
@@ -252,6 +299,39 @@ validation errors as users are building the dependencies list.
                     },
                     "markers": {
                         "title": "Dependency environment markers",
+                        "type": "string"
+                    },
+                    "os-name": {
+                        "type": "string"
+                    },
+                    "sys-platform": {
+                        "type": "string"
+                    },
+                    "platform-machine": {
+                        "type": "string"
+                    },
+                    "platform-python-implementation": {
+                        "type": "string"
+                    },
+                    "platform-release": {
+                        "type": "string"
+                    },
+                    "platform-system": {
+                        "type": "string"
+                    },
+                    "platform-version": {
+                        "type": "string"
+                    },
+                    "python-version": {
+                        "type": "string"
+                    },
+                    "python-full-version": {
+                        "type": "string"
+                    },
+                    "implementation-name": {
+                        "type": "string"
+                    },
+                    "implementation-version": {
                         "type": "string"
                     }
                 },
@@ -428,20 +508,20 @@ Full artificial example:
     [project.dependencies]
     flask = { }
     django = { }
-    requests = { version = ">= 2.8.1, == 2.8.*", extras = ["security", "tests"], markers = "python_version < '2.7'" }
+    requests = { version = ">= 2.8.1, == 2.8.*", extras = ["security", "tests"], python-version = "< '2.7'" }
     pip = { url = "https://github.com/pypa/pip/archive/1.3.1.zip" }
     sphinx = { git = "ssh://git@github.com/sphinx-doc/sphinx.git" }
     numpy = "~=1.18"
     pytest = [
-        { version = "<6", markers = "python_version < '3.5'" },
-        { version = ">=6", markers = "python_version >= '3.5'" },
+        { version = "<6", python-version = "< '3.5'" },
+        { version = ">=6", python-version = ">= '3.5'" },
     ]
 
     [project.optional-dependencies]
     pytest-timout = { for-extra = "dev" }
     pytest-mock = [
-        { version = "<6", markers = "python_version < '3.5'", for-extra = "dev" },
-        { version = ">=6", markers = "python_version >= '3.5'", for-extra = "dev" },
+        { version = "<6", python-version = " < '3.5'", for-extra = "dev" },
+        { version = ">=6", python-version = " >= '3.5'", for-extra = "dev" },
     ]
 
 In homage to :pep:`631`, the following is an equivalent dependencies
@@ -462,18 +542,18 @@ specification for `docker-compose`_:
     websocket-client = ">= 0.32.0, < 1"
 
     # Conditional
-    "backports.shutil_get_terminal_size" = { version = "== 1.0.0", markers = "python_version < '3.3'" }
-    "backports.ssl_match_hostname" = { version = ">= 3.5, < 4", markers = "python_version < '3.5'" }
-    colorama = { version = ">= 0.4, < 1", markers = "sys_platform == 'win32'" }
-    enum34 = { version = ">= 1.0.4, < 2", markers = "python_version < '3.4'" }
-    ipaddress = { version = ">= 1.0.16, < 2", markers = "python_version < '3.3'" }
-    subprocess32 = { version = ">= 3.5.4, < 4", markers = "python_version < '3.2'" }
+    "backports.shutil_get_terminal_size" = { version = "== 1.0.0", python-version = "< '3.3'" }
+    "backports.ssl_match_hostname" = { version = ">= 3.5, < 4", python-version = "< '3.5'" }
+    colorama = { version = ">= 0.4, < 1", sys-platform = "== 'win32'" }
+    enum34 = { version = ">= 1.0.4, < 2", python-version = "< '3.4'" }
+    ipaddress = { version = ">= 1.0.16, < 2", python-version = "< '3.3'" }
+    subprocess32 = { version = ">= 3.5.4, < 4", python-version = "< '3.2'" }
 
     [project.optional-dependencies]
     PySocks = { version = ">= 1.5.6, != 1.5.7, < 2", for-extra = "socks" }
     ddt = { version = ">= 1.2.2, < 2", for-extra = "tests" }
     pytest = { version = "< 6", for-extra = "tests" }
-    mock = { version = ">= 1.0.1, < 4", markers = "python_version < '3.4'", for-extra = "tests" }
+    mock = { version = ">= 1.0.1, < 4", python-version = " '3.4'", for-extra = "tests" }
 
 .. _docker-compose: https://github.com/docker/compose/blob/789bfb0e8b2e61f15f423d371508b698c64b057f/setup.py#L28-L61
 
@@ -586,8 +666,8 @@ A slightly extended example of the above, where a particular version of ``aiohtt
 .. code-block::
 
         aiohttp = [
-            { version = ">= 3.6.1", markers = "python_version >= '3.8'" },
-            { version = ">= 3.0.0, < 3.6.1", markers = "python_version < '3.8'" }
+            { version = ">= 3.6.1", python-version = ">= '3.8'" },
+            { version = ">= 3.0.0, < 3.6.1", python-version = "< '3.8'" }
         ]
 
 
@@ -629,7 +709,7 @@ Complex Examples
 
 .. code-block::
 
-        aiohttp = { version = ">= 3.6.2", extras = ["speedups"], markers = "python_version >= '3.8'", for-extra = "http" }
+        aiohttp = { version = ">= 3.6.2", extras = ["speedups"], python-version = ">= '3.8'", for-extra = "http" }
 
 
 **Direct Reference (VCS)**
@@ -641,7 +721,7 @@ Complex Examples
 
 .. code-block::
 
-        aiohttp = { git = "ssh://git@github.com/aio-libs/aiohttp.git", revision = "master", extras = ["speedups"], markers = "python_version >= '3.8'", for-extra = "http" }
+        aiohttp = { git = "ssh://git@github.com/aio-libs/aiohttp.git", revision = "master", extras = ["speedups"], python-version = ">= '3.8'", for-extra = "http" }
 
 
 Rejected Ideas
@@ -695,11 +775,9 @@ and harder to parse.
 Environment marker keys
 -----------------------
 
-Make each :pep:`508` environment marker as a key (or child-table key) in
-the requirement. This arguably increases readability and ease of parsing.
-The ``markers`` key would still be allowed for more advanced specification,
-with which the key-specified environment markers are ``and``'d with the
-result of. This was deferred as more design needs to be undertaken.
+Only allowing environment markers in ``markers`` key. The environment marker
+keys allows for increases in readability and ease of parsing for common
+cases.
 
 Multiple extras which one requirement can satisfy
 -------------------------------------------------
