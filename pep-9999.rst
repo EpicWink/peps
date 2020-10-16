@@ -1,0 +1,557 @@
+PEP: 9999
+Title: Dependency specification in pyproject.toml using an exploded TOML table
+Author: Laurie Opperman <laurie_opperman@hotmail.com>
+Status: Draft
+Type: Standards Track
+Content-Type: text/x-rst
+Created: 02-09-2020
+Post-History: TBD
+
+
+Abstract
+========
+
+This PEP specifies how to write a project's dependencies in a
+``pyproject.toml`` file for packaging-related tools to consume using the fields
+defined in :pep:`621`, as an alternative to the :pep:`508`-based approach
+defined in :pep:`631`. Specifically, the tables ``project.dependencies`` and
+``project.optional-dependencies`` are defined.
+
+
+Motivation
+==========
+
+There are multiple benefits to using TOML tables and other data-types to
+represent requirements rather then :pep:`508` strings:
+
+- Easy initial validation via the TOML syntax.
+
+- Easy secondary validation using a schema, for example a `JSON Schema`_.
+
+- Potential for users to guess the keys of given features, rather than
+  memorising a syntax.
+
+- Users of multiple other popular languages may already be familiar with the
+  TOML syntax.
+
+- TOML directly represents the same data structures as in JSON, and therefore a
+  sub-set of Python literals, so users can understand the hierarchy and type of
+  value
+
+.. _JSON Schema: https://json-schema.org/
+
+
+Rationale
+=========
+
+Most of this is taken from discussions in the `PEP 621 dependencies topic`_.
+This has elements from `Pipfile`_, `Poetry`_, `Dart's dependencies`_ and
+`Rust's Cargo`_. A `comparison document`_ shows advantages and disadvantages
+between this format and :pep:`508`-style specifiers.
+
+One example is the need to allow for specifying distributions in multiple
+dependencies (environment markers will choose the appropriate dependency).
+
+The environment markers are modelled from `Poetry`_ and `Pipfile`_, and the
+ability to specify environment markers in keys was allowed due to the
+improved ease-of-use. The decision to convert underscores ``_`` to hyphens
+``-`` was made to keep keys consistent with the rest of :pep:`621`.
+
+The direct-reference keys closely align with and utilise pep:`610` and
+:pep:`440` as to reduce differences in the packaging ecosystem and rely on
+previous work in specification.
+
+.. _PEP 621 dependencies topic: https://discuss.python.org/t/pep-621-how-to-specify-dependencies/4599
+.. _Pipfile: https://github.com/pypa/pipfile
+.. _Poetry: https://python-poetry.org/docs/dependency-specification/
+.. _Dart's dependencies: https://dart.dev/tools/pub/dependencies
+.. _Rust's Cargo: https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html
+.. _comparison document: https://github.com/uranusjr/packaging-metadata-comparisons/blob/master/topics/dependency-entries.md
+
+
+Specification
+=============
+
+As in :pep:`621`, if metadata is improperly specified then tools MUST raise an
+error. The metadata MUST conform to the `toml`_ specification.
+
+To reduce confusion with this document being a specification for specifying
+dependencies, the word "requirement" is used to mean a :pep:`508` dependency
+specification.
+
+The following tables are added to the added to the ``project`` table specified
+in :pep:`621`.
+
+.. _toml: https://toml.io/
+
+dependencies
+------------
+
+Format: table
+
+The keys inside this table are the names of the required distribution. The
+values can have one of the following types:
+
+- string: the requirement is defined only by a version requirement, with same
+  specification as ``version`` in the requirement table, except allowing the
+  empty string ``""`` to place no restriction on the version.
+
+- table: a requirement table.
+
+- array: an array of requirement tables. It is an error to specify an empty
+  array ``[]`` as a value.
+
+.. _requirement-spec:
+
+Requirement table
+^^^^^^^^^^^^^^^^^
+
+The keys of the requirement table are as follows:
+
+- ``version`` (string): a :pep:`440` version specifier, which is a comma-
+  delimited list of version specifier clauses. The string MUST be non-empty.
+
+- ``extras`` (array of strings): a list of :pep:`508` extras declarations for
+  the distribution. The list MUST be non-empty.
+
+- ``markers`` (string): a :pep:`508` environment marker expression. The string
+  MUST be non-empty.
+
+- ``url`` (string): the URL of the artifact to install and satisfy the
+  requirement. Note that ``file://`` is the prefix used for packages to be
+  retrieved from the local filesystem.
+
+- ``git``, ``hg``, ``bzr`` or ``svn`` (string): the URL of a VCS repository to
+  to clone, whose tree will be installed to satisfy the requirement. Further
+  VCS keys will be added via amendments to :pep:`610`, however tools can opt to
+  support other VCS's using their command-line command prior to the acceptance
+  of the amendment.
+
+- ``revision`` (string): the identifier for a specific revision of the
+  specified VCS repository to check-out before installtion. Users MUST only
+  provide this when one of ``git``, ``hg``, ``bzr``, ``svn``, or another VCS
+  key is used to identify the distribution to install. Revision identifiers are
+  suggested in :pep:`610`.
+
+At most one of the following keys can be specified simultaneously, as they
+logically conflict with each other in the requirement: ``version``, ``url``,
+``git``, ``hg``, ``bzr``, ``svn``, and any other VCS key.
+
+An empty requirement table ``{}`` places no restriction on the requirement.
+
+Environment markers
+*******************
+
+All of the :pep:`508` environment marker variables are available, with the
+following mapping (period ``.`` indicates that the part to the right is a key
+in the table with name as the part to the left).
+
+.. list-table::
+    :header-rows: 1
+
+    * - Variable name
+      - Key path
+
+    * - ``os_name``
+      - ``os.name``
+    * - ``sys_platform``
+      - ``sys.platform``
+    * - ``platform_machine``
+      - ``platform.machine``
+    * - ``platform_python_implementation``
+      - ``platform.python-implementation``
+    * - ``platform_release``
+      - ``platform.release``
+    * - ``platform_system``
+      - ``platform.system``
+    * - ``platform_version``
+      - ``platform.version``
+    * - ``python_version``
+      - ``python.version``
+    * - ``python_full_version``
+      - ``python.full-version``
+    * - ``implementation_name``
+      - ``implementation.name``
+    * - ``implementation_version``
+      - ``implementation.version``
+
+As an example, for the environment marker ``python_version < "2.7"``, the
+following is included in the requirement table:
+
+.. code-block:: toml
+
+    python.version = "< '2.7'"
+
+All of these environment markers must be satisfied, in addition to the value of
+the ``markers`` key, for a requirement to be included.
+
+Note that the ``extra`` marker is missing: this is only to be specified as
+``for-extra`` in ``optional-dependencies`` requirements.
+
+optional-dependencies
+---------------------
+
+Format: table
+
+The keys inside this table are the names of an extra's required distribution.
+The values can have one of the following types:
+
+- table: a requirement table.
+
+- array: an array of requirement tables.
+
+These requirement tables have
+`the same specification as above <#requirement-spec>`_, with the addition of
+the following required key:
+
+- ``for-extra`` (string): the name of the :pep:`508` extra that this
+  requirement is required for.
+
+
+Reference implementation
+========================
+
+Tools will need to convert this format to :pep:`508` requirement strings. Below
+is an example implementation of that conversion (assuming validation is already
+performed):
+
+.. code-block:: python
+
+    def convert_requirement_to_pep508(name, requirement):
+        if isinstance(requirement, str):
+            requirement = {"version": requirement}
+        pep508 = name
+        if "extras" in requirement:
+            pep508 += " [" + ", ".join(requirement["extras"]) + "]"
+        if "version" in requirement:
+            pep508 += " " + requirement["version"]
+        if "url" in requirement:
+            pep508 += " @ " + requirement["url"]
+        for vcs in ("git", "hg", "bzr", "svn"):
+            if vcs in requirement:
+                pep508 += " @ " + vcs + "+" requirement[vcs]
+                if "revision" in requirement:
+                    pep508 += "@" + revision
+
+        markers = []
+        for variable, key1, key2 in (
+            ("os_name", "os", "name"),
+            ("sys_platform", "sys", "platform"),
+            ("platform_machine", "platform", "machine"),
+            (
+                "platform_python_implementation",
+                "platform",
+                "python-implementation",
+            ),
+            ("platform_release", "platform", "release"),
+            ("platform_system", "platform", "system"),
+            ("platform_version", "platform", "version"),
+            ("python_version", "python", "version"),
+            ("python_full_version", "python", "full-version"),
+            ("implementation_name", "implementation", "name"),
+            ("implementation_version", "implementation", "version"),
+        ):
+            if key2 in requirement.get(key1, {}):
+                markers.append(variable + " " + requirement[key1][key2])
+        if "for-extra" in requirement:
+            markers.append("extra = '" + requirement["for-extra"] + "'")
+        if "markers" in requirement:
+            markers_explicit = requirement["markers"]
+            if markers:
+                markers_explicit = "(" + markers_explicit + ")"
+            markers.append(markers_explicit)
+        if markers:
+            pep508 += " ; " + " and ".join(markers)
+        return pep508
+
+
+    def convert_requirements_to_pep508(dependencies):
+        pep508s = []
+        for name, req in dependencies.items():
+            if isinstance(req, list):
+                for sub_req in req:
+                    pep508s.append(convert_requirement_to_pep508(name, sub_req))
+            else:
+                pep508s.append(convert_requirement_to_pep508(name, req))
+        return pep508s
+
+
+    def convert_project_requirements_to_pep508(project):
+        reqs = convert_requirements_to_pep508(project.get("dependencies", {}))
+        extras = {}
+        for name, extra_deps in project.get("optional-dependencies", {}).items():
+            extras[name] = convert_requirements_to_pep508(extra_deps)
+        return reqs, extras
+
+
+Examples
+========
+
+Full example:
+
+.. code-block:: toml
+
+    [project.dependencies]
+    flask = { }
+    django = { }
+    requests = { version = ">= 2.8.1, == 2.8.*", extras = ["security", "tests"], python.version = "< '2.7'" }
+    pip = { url = "https://github.com/pypa/pip/archive/1.3.1.zip" }
+    sphinx = { git = "ssh://git@github.com/sphinx-doc/sphinx.git" }
+    numpy = "~=1.18"
+    pytest = [
+        { version = "<6", python.version = "< '3.5'" },
+        { version = ">=6", python.version = ">= '3.5'" },
+    ]
+
+In homage to :pep:`631`, the following is an equivalent dependencies
+specification for `docker-compose`_:
+
+.. code-block:: toml
+
+    [project.dependencies]
+    cached-property = ">= 1.2.0, < 2"
+    distro = ">= 1.2.0, < 2"
+    docker = { extras = ["ssh"], version = ">= 4.2.2, < 5" }
+    docopt = ">= 0.6.1, < 1"
+    jsonschema = ">= 2.5.1, < 4"
+    PyYAML = ">= 3.10, < 6"
+    python-dotenv = ">= 0.13.0, < 1"
+    requests = ">= 2.20.0, < 3"
+    texttable = ">= 0.9.0, < 2"
+    websocket-client = ">= 0.32.0, < 1"
+
+    # Conditional
+    "backports.shutil_get_terminal_size" = { version = "== 1.0.0", python.version = "< '3.3'" }
+    "backports.ssl_match_hostname" = { version = ">= 3.5, < 4", python.version = "< '3.5'" }
+    colorama = { version = ">= 0.4, < 1", sys.platform = "== 'win32'" }
+    enum34 = { version = ">= 1.0.4, < 2", python.version = "< '3.4'" }
+    ipaddress = { version = ">= 1.0.16, < 2", python.version = "< '3.3'" }
+    subprocess32 = { version = ">= 3.5.4, < 4", python.version = "< '3.2'" }
+
+    [project.optional-dependencies]
+    PySocks = { version = ">= 1.5.6, != 1.5.7, < 2", for-extra = "socks" }
+    ddt = { version = ">= 1.2.2, < 2", for-extra = "tests" }
+    pytest = { version = "< 6", for-extra = "tests" }
+    mock = { version = ">= 1.0.1, < 4", python.version = "< '3.4'", for-extra = "tests" }
+
+.. _docker-compose: https://github.com/docker/compose/blob/789bfb0e8b2e61f15f423d371508b698c64b057f/setup.py#L28-L61
+
+
+Compatibility Examples
+======================
+
+The authors of this PEP recognises that various tools need to both read
+from and write to this format for dependency specification. This section
+aims to provide direct comparison with and examples for translating to/from
+the currently used standard, :pep:`508`.
+
+.. note::
+
+        For simplicity and clarity, various ways in which TOML allows you to specify each
+        specification is not represented. These examples use the standard inline representation.
+
+        For example, while following are considered equivalent in TOML, we choose the
+        second form for the examples in this section.
+
+		.. code-block:: toml
+
+			aiohttp.version = "== 3.6.2"
+			aiohttp = { version = "== 3.6.2" }
+
+
+Version Constrained Dependencies
+--------------------------------
+
+**No Version Constraint**
+
+.. code-block::
+
+        aiohttp
+
+
+.. code-block:: toml
+
+        aiohttp = {}
+
+**Simple Version Constraint**
+
+.. code-block::
+
+        aiohttp (>= 3.6.2, < 4.0.0)
+
+
+.. code-block:: toml
+
+        aiohttp = { version = ">= 3.6.2, < 4.0.0" }
+
+
+.. note::
+
+        This can, for conciseness, be also represented as a string.
+
+        .. code-block:: toml
+
+			aiohttp = ">= 3.6.2, < 4.0.0"
+
+
+
+Direct Reference Dependencies
+-----------------------------
+
+**URL Dependency**
+
+.. code-block::
+
+        aiohttp @ https://files.pythonhosted.org/packages/97/d1/1cc7a1f84097d7abdc6c09ee8d2260366f081f8e82da36ebb22a25cdda9f/aiohttp-3.6.2-cp35-cp35m-macosx_10_13_x86_64.whl
+
+
+.. code-block:: toml
+
+        aiohttp = { url = "https://files.pythonhosted.org/packages/97/d1/1cc7a1f84097d7abdc6c09ee8d2260366f081f8e82da36ebb22a25cdda9f/aiohttp-3.6.2-cp35-cp35m-macosx_10_13_x86_64.whl" }
+
+**VCS Dependency**
+
+.. code-block::
+
+        aiohttp @ git+ssh://git@github.com:aio-libs/aiohttp.git@master
+
+
+.. code-block:: toml
+
+        aiohttp = { git = "git@github.com:aio-libs/aiohttp.git", revision = "master" }
+
+
+Environment Markers
+-------------------
+
+.. code-block::
+
+        aiohttp (>= 3.6.1) ; python_version >= '3.8'
+
+
+.. code-block:: toml
+
+        aiohttp = { version = ">= 3.6.1", markers = "python_version >= '3.8'" }
+
+
+A silightly extended example of the above, where a particular version of ``aiohttp`` is required based on the interpreter version.
+
+.. code-block::
+
+        aiohttp (>= 3.6.1) ; python_version >= '3.8'
+        aiohttp (>= 3.0.0, < 3.6.1) ; python_version < '3.8'
+
+
+.. code-block:: toml
+
+        aiohttp = [
+            { version = ">= 3.6.1", markers = "python_version >= '3.8'" },
+            { version = ">= 3.0.0, < 3.6.1", markers = "python_version < '3.8'" }
+        ]
+
+
+Package Extras
+--------------
+
+**Specifying dependency for a package extra**
+
+.. code-block::
+
+        aiohttp (>= 3.6.2) ; extra == 'http'
+
+
+.. code-block:: toml
+
+        aiohttp = { version = ">= 3.6.2", for-extra = "http" }
+
+**Using extras from a dependency**
+
+.. code-block::
+
+        aiohttp [speedups] (>= 3.6.2)
+
+
+.. code-block:: toml
+
+        aiohttp = { version = ">= 3.6.2", extras = ["speedups"] }
+
+
+Complex Examples
+----------------
+
+**Version Constraint**
+
+.. code-block::
+
+        aiohttp [speedups] (>=3.6.2) ; python_version >= '3.8' and extra == 'http'
+
+
+.. code-block:: toml
+
+        aiohttp = { version = ">= 3.6.2", extras = ["speedups"], markers = "python_version >= '3.8'", for-extra = "http" }
+
+
+**Direct Reference (VCS)**
+
+.. code-block::
+
+        aiohttp [speedups] @ git+ssh://git@github.com:aio-libs/aiohttp.git@master ; python_version >= '3.8' and extra == 'http'
+
+
+.. code-block:: toml
+
+        aiohttp = { git = "git@github.com:aio-libs/aiohttp.git", revision = "master", extras = ["speedups"], markers = "python_version >= '3.8'", for-extra = "http" }
+
+
+Rejected Ideas
+==============
+
+- Using an array for `dependencies` instead of a table, in order to have each
+  element only be a table (with a `name` key) and no arrays of requirement
+  tables. This was very verbose and restrictive in the TOML format, and having
+  multiple requirements for a given distribution isn't very common.
+
+- Removing the ``optional-dependencies`` table in favour of both including an
+  ``optional`` key in the requirement and an ``extras`` table which specifies
+  which (optional) requirements are needed for a project's extra. This reduces
+  the number of table with the same specification (to 1) and allows for
+  requirements to be specified once but used in multiple extras, but distances
+  some of the requirement's properties (which extra(s) it belongs to), groups
+  required and optional dependencies together (possibly mixed), and there may
+  not be a simple way to choose a requirement when a distribution has multiple
+  requirements. This was rejected as ``optional-dependencies`` has already been
+  accepted in :pep:`621`.
+
+- Include the direct-reference keys in a ``direct`` table, have the VCS
+  specified as the value of a ``vcs`` key. This was more explicit and easier to
+  include in a JSON-schema validation, but was decided to be too verbose and
+  not as readable.
+
+- Include hash in direct-reference requirements. This was only for package
+  lock-files, and didn't really have a place in the project's metadata.
+
+- Have the ``optional-dependencies`` be a table of dependency tables for each
+  extra, with the table name being the extra's name. This made
+  ``optional-dependencies`` a different type (table of tables of requirements)
+  from ``dependencies`` (table of requirements), which could be jarring for
+  users and harder to parse.
+
+- Only allowing environment markers in ``markers`` key. The environment marker
+  keys allows for increases in readability and ease of parsing for common
+  cases, with no major drawbacks.
+
+
+Copyright
+=========
+
+This document is placed in the public domain or under the
+CC0-1.0-Universal license, whichever is more permissive.
+
+..
+   Local Variables:
+   mode: indented-text
+   indent-tabs-mode: nil
+   sentence-end-double-space: t
+   fill-column: 70
+   coding: utf-8
+   End:
